@@ -367,6 +367,17 @@ export class Raileys {
       this.emitter.emit('reaction', msg)
       return
     }
+    // a button tap behaves like typing its id as a command, when one exists
+    if (msg.type === 'button' && msg.buttonId) {
+      const tapped = this.commands.get(msg.buttonId.toLowerCase())
+      if (tapped) {
+        this.emitter.emit('message', msg)
+        this.emitter.emit('button', msg)
+        await this.runCommand(msg, tapped)
+        return
+      }
+    }
+
     this.emitter.emit('message', msg)
     this.emitter.emit(msg.type, msg)
 

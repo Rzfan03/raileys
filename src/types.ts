@@ -81,6 +81,7 @@ export type MessageEventName =
   | 'location'
   | 'contact'
   | 'reaction'
+  | 'button'
   | 'poll'
 
 /** Payload of the `join` / `leave` events. */
@@ -104,6 +105,7 @@ export type InboundType =
   | 'location'
   | 'contact'
   | 'reaction'
+  | 'button'
   | 'poll'
   | 'other'
   | 'unknown'

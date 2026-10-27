@@ -123,7 +123,7 @@ Denied commands are skipped silently (bots shouldn't nag). Defaults apply on eve
 | `m.text` | body text, or the caption on media |
 | `m.name`, `m.senderId`, `m.phone` | display name, JID, phone number of the sender |
 | `m.chatId`, `m.isGroup`, `m.fromMe`, `m.id` | chat context |
-| `m.type` | `text` \| `image` \| `video` \| `audio` \| `sticker` \| `document` \| `location` \| `contact` \| `reaction` \| `poll` |
+| `m.type` | `text` \| `image` \| `video` \| `audio` \| `sticker` \| `document` \| `location` \| `contact` \| `reaction` \| `button` \| `poll` |
 | `m.command`, `m.args`, `m.argv` | parsed command name / joined args / split args |
 | `m.mentions` | JIDs @mentioned in the message |
 | `m.raw` | the original Baileys `WAMessage` — full escape hatch |
@@ -135,6 +135,8 @@ Denied commands are skipped silently (bots shouldn't nag). Defaults apply on eve
 | `m.sticker(webp)` | send a webp Buffer as a sticker |
 | `m.poll(question, options)` | official WhatsApp poll |
 | `m.menu(title, items)` | numbered menu with automatic routing (below) |
+| `m.buttons(title, [{ id, text }])` | real visual buttons, tap auto-runs the matching command (below, unofficial) |
+| `m.buttonId` | tapped button's id when `type === 'button'` |
 | `m.ask(question)` | multi-step conversation (below) |
 | `m.kick(jids)` / `m.groupAdd(jids)` / `m.leave()` / `m.groupInfo()` | group management (bot must be admin) |
 | `m.user.data` | per-user storage, persisted to disk (below) |
@@ -175,6 +177,24 @@ vote: (m) => m.poll('Lunch?', ['Nasi goreng', 'Bakso', 'Mie ayam']),
 
 `m.menu()` sends a numbered list and routes the reply — no visual "buttons", which is deliberate: WhatsApp's native button API is unofficial and breaks on every WhatsApp update. Numbered menus work on every client, forever.
 
+### Real visual buttons (unofficial)
+
+If you want actual tappable buttons anyway, `m.buttons()` sends them via WhatsApp's native flow:
+
+```ts
+saldo:  () => 'Balance: $0 😢',
+help:   () => 'Type .help',
+tombol: (m) =>
+  m.buttons('Pick one:', [
+    { id: 'saldo', text: 'Check balance' },
+    { id: 'help',  text: 'Help' },
+  ], { footer: 'Tap a button' }),
+
+bot.on('button', (m) => console.log('tapped:', m.buttonId))
+```
+
+A tap arrives as a message with `type === 'button'` and `m.buttonId` — and if a command with that id exists, it **runs automatically**, so the two commands above are all you need. Note the trade-off: this path works on current WhatsApp clients but is not a documented API and can stop rendering after a WhatsApp update. `m.menu()` remains the always-works fallback.
+
 ## "HTML" in chat
 
 WhatsApp never renders real HTML. raileys converts a small subset to the native formatting every client understands:
@@ -205,9 +225,10 @@ bot.on('join',    () => 'Welcome!')   // group participants
 bot.on('leave',   () => 'Bye!')
 bot.on('poll',    (m) => console.log(`poll created: ${m.text}`))
 bot.on('reaction',(m) => console.log(`${m.name} reacted ${m.emoji}`))
+bot.on('button',  (m) => console.log(`button tapped: ${m.buttonId}`))
 ```
 
-Events: `message` (everything), `text`, `image`, `video`, `audio`, `sticker`, `document`, `location`, `contact`, `reaction`, `poll`, plus group `join`/`leave`. Same return-value rules as `.cmd()`.
+Events: `message` (everything), `text`, `image`, `video`, `audio`, `sticker`, `document`, `location`, `contact`, `reaction`, `button`, `poll`, plus group `join`/`leave`. Same return-value rules as `.cmd()`.
 
 ## Middleware — `.use()`
 
@@ -244,14 +265,14 @@ bot.me                         // { id, name } once connected
 ## Development
 
 ```sh
-npm test        # build + 33 assertions (JIDs, command parsing, media sniffing, HTML)
+npm test        # build + 37 assertions (JIDs, command parsing, media sniffing, HTML)
 npm run typecheck
 npm run try     # run examples/basic.ts with your own number
 ```
 
 ## Status & scope
 
-v0.2 — the foundation is stable and battle-tested (real-world pairing, reconnect, sessions, sends). Vote results for polls, profile management, block/unblock, presence, and newsletters are not wrapped yet; until they are, `bot.sock` gives you raw Baileys for anything missing.
+v0.2 — the foundation is stable and battle-tested (real-world pairing, reconnect, sessions, sends). Visual buttons ride an unofficial WhatsApp path — they work today but can break on a WhatsApp update; `m.menu()` is the stable fallback. Poll vote results, profile management, block/unblock, presence, and newsletters are not wrapped yet; until they are, `bot.sock` gives you raw Baileys for anything missing.
 
 ## License
 

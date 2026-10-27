@@ -1,6 +1,7 @@
 export type { AskOptions, MenuItem, PollOptions } from './message.js'
 export { Raileys, loadRaileysConfig } from './client.js'
 export { InboundMessage } from './message.js'
+export type { ButtonItem } from './buttons.js'
 export { isGroup, phoneNumber as phoneFromJid, toJid } from './jid.js'
 export type {
   RaileysOptions,

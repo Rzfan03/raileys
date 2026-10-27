@@ -1,4 +1,5 @@
 import { downloadMediaMessage, type WASocket, type WAMessage } from 'baileys'
+import { sendButtons, type ButtonItem } from './buttons.js'
 import { contentOf, describeMessage, type DescribedMessage } from './content.js'
 import { renderHtml } from './html.js'
 import { isGroup, senderOf, toJid, phoneNumber } from './jid.js'
@@ -101,6 +102,11 @@ export class InboundMessage {
   /** Emoji when `type === 'reaction'`. */
   get emoji(): string | null {
     return this.described.reaction
+  }
+
+  /** Tapped button's id when `type === 'button'` (defaults to the button text, lowercase). */
+  get buttonId(): string | null {
+    return this.described.buttonId
   }
 
   /** Contact display name when `type === 'contact'`. */
@@ -223,6 +229,16 @@ export class InboundMessage {
   /** Send a webp Buffer as a sticker into this chat. */
   async sticker(webp: string | Buffer): Promise<void> {
     await this.sock.sendMessage(this.chatId, { sticker: toMediaUpload(webp) })
+  }
+
+  /**
+   * Send real visual buttons. The tap arrives with `m.buttonId` — and if a
+   * command with that name is registered, it runs automatically.
+   * Unofficial WhatsApp path: works today, can break on WhatsApp updates.
+   * `m.menu()` is the always-works fallback.
+   */
+  async buttons(title: string, buttons: ButtonItem[], options: { footer?: string } = {}): Promise<void> {
+    await sendButtons(this.sock, this.chatId, title, buttons, options.footer)
   }
 
   /** Remove members from this group. The bot must be an admin. */

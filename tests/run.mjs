@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict'
 import { phoneNumber as phoneFromJid, isGroup, toJid } from '../dist/jid.js'
 import { InboundMessage } from '../dist/message.js'
+import { buildButtonsMessage } from '../dist/buttons.js'
 import { mediaKind, contentFor, toMediaUpload } from '../dist/reply.js'
 import { Emitter } from '../dist/events.js'
 
@@ -81,6 +82,51 @@ test('describe: reaction emoji', () => {
   const m = fakeMessage('', { message: { reactionMessage: { text: '👍' } } })
   assert.equal(m.type, 'reaction')
   assert.equal(m.emoji, '👍')
+})
+test('describe: button tap yields the button id', () => {
+  const m = fakeMessage('', {
+    message: {
+      interactiveResponseMessage: {
+        nativeFlowResponseMessage: {
+          name: 'quick_reply',
+          paramsJson: JSON.stringify({ id: 'menu1', display_text: 'Cek saldo' }),
+        },
+      },
+    },
+  })
+  assert.equal(m.type, 'button')
+  assert.equal(m.buttonId, 'menu1')
+  assert.equal(m.text, 'Cek saldo')
+})
+test('describe: button tap with broken paramsJson is still a button', () => {
+  const m = fakeMessage('', {
+    message: { interactiveResponseMessage: { nativeFlowResponseMessage: { paramsJson: 'not-json' } } },
+  })
+  assert.equal(m.type, 'button')
+  assert.equal(m.buttonId, null)
+})
+
+// ── buttons builder ──
+test('buildButtonsMessage: quick_reply shape with ids and labels', () => {
+  const content = buildButtonsMessage('Pilih:', [
+    { id: 'a', text: 'A' },
+    { text: 'B' },
+  ])
+  const interactive = content.viewOnceMessage.message.interactiveMessage
+  assert.equal(interactive.body.text, 'Pilih:')
+  const buttons = interactive.nativeFlowMessage.buttons
+  assert.equal(buttons.length, 2)
+  assert.equal(buttons[0].name, 'quick_reply')
+  assert.deepEqual(JSON.parse(buttons[0].buttonParamsJson), { id: 'a', display_text: 'A' })
+  assert.equal(JSON.parse(buttons[1].buttonParamsJson).id, 'b') // default: lowercase text
+})
+test('buildButtonsMessage: rejects empty and duplicate ids', () => {
+  assert.throws(() => buildButtonsMessage('t', [{ text: '   ' }]), /must not be empty/)
+  assert.throws(
+    () => buildButtonsMessage('t', [{ id: 'x', text: 'A' }, { text: 'x' }]),
+    /must be unique/,
+  )
+  assert.throws(() => buildButtonsMessage('t', []), /1–10 items/)
 })
 test('quoted message is exposed with its own sender', () => {
   const m = fakeMessage('reply dulu', {

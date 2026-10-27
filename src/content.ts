@@ -25,6 +25,7 @@ export interface DescribedMessage {
   location: LocationInfo | null
   contactName: string | null
   reaction: string | null
+  buttonId: string | null
   isProtocol: boolean
 }
 
@@ -42,6 +43,7 @@ export function describeMessage(raw: WAMessage): DescribedMessage {
     location: null,
     contactName: null,
     reaction: null,
+    buttonId: null,
     isProtocol: false,
   }
   const content = contentOf(raw)
@@ -115,7 +117,25 @@ export function describeMessage(raw: WAMessage): DescribedMessage {
     out.text = reaction.text ?? ''
     return out
   }
+  const interactive = content.interactiveResponseMessage?.nativeFlowResponseMessage
+  if (interactive && typeof interactive === 'object') {
+    out.type = 'button'
+    const params = parseParams(interactive.paramsJson)
+    out.text = params?.display_text ?? ''
+    out.buttonId = params?.id ?? null
+    return out
+  }
 
   out.type = 'other'
   return out
+}
+
+function parseParams(json: string | null | undefined): { id?: string; display_text?: string } | null {
+  if (!json) return null
+  try {
+    const parsed = JSON.parse(json) as { id?: string; display_text?: string }
+    return typeof parsed === 'object' ? parsed : null
+  } catch {
+    return null
+  }
 }

@@ -46,7 +46,12 @@ On `m` (inbound message):
 - Read: `m.text` (body or caption), `m.name`, `m.senderId`, `m.phone`, `m.chatId`, `m.isGroup`, `m.type`, `m.id`, `m.mentions` (JIDs), `m.raw` (WAMessage), `m.quoted`.
 - Command fields: `m.command`, `m.args` (joined string), `m.argv` (array).
 - Actions: `m.reply(text)` (quote), `m.send(text)`, `m.react('👍')`, `m.read()`, `m.media()` (Buffer download), `m.sticker(webpBuffer)`, `m.kick(jids)`, `m.groupAdd(jids)`, `m.groupInfo()`, `m.leave()`.
-- Flows: `await m.ask('Umur?', { validate: /^\d+$/, retry: 'Angka saja' })`; `await m.menu('Pick:', [{ title, run }])`; `m.user.data.x = 1` (per-user JSON storage, persisted).
+- Flows: `await m.ask('Umur?', { validate: /^\d+$/, retry: 'Angka saja' })`; `await m.menu('Pick:', [{ title, run }])`;
+  `m.buttons('Pick:', [{ id: 'saldo', text: 'Saldo' }], { footer? })` — real visual buttons (UNOFFICIAL path,
+  can break on WhatsApp updates; `m.menu()` is the stable fallback). A tap arrives as `type === 'button'` with
+  `m.buttonId`, and auto-runs the command with that name if registered; `bot.on('button', ...)` also fires.
+- `m.buttonId`: tapped button's id (defaults to the button text, lowercase).
+- Storage: `m.user.data.x = 1` (per-user JSON storage, persisted).
 - HTML subset: `<b> <i> <s> <code> <pre> <br> <a href>` → `*…* _…_ ~…~ ```mono``` \n "text (url)"`. No underline — WhatsApp has none.
 
 ## Pitfalls (these cause most "bot doesn't work" reports)
@@ -72,6 +77,6 @@ On `m` (inbound message):
 
 ## Versions
 
-- `0.2.x` — current: commands/filters/events/middleware, ask/menu/poll, HTML subset, groups, per-user storage, config file.
+- `0.2.x` — current: commands/filters/events/middleware, ask/menu/buttons/poll, HTML subset, groups, per-user storage, config file.
 - Not wrapped yet (use `bot.sock`): poll vote results, profile management, block/unblock, presence subscription, newsletters.
 - Package on npm: `@rzfan03/raileys`. The plain `raileys` name on npm is a DIFFERENT, unrelated package — never install it for this.
