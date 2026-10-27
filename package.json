@@ -1,5 +1,5 @@
 {
-  "name": "raileys",
+  "name": "@rzfan03/raileys",
   "version": "0.2.0",
   "description": "Baileys, but human readable and easy to use.",
   "type": "module",
@@ -40,5 +40,13 @@
     "@types/qrcode-terminal": "^0.12.2",
     "tsx": "^4.23.15",
     "typescript": "^5.6.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Rzfan03/raileys"
+  },
+  "homepage": "https://github.com/Rzfan03/raileys#readme",
+  "bugs": {
+    "url": "https://github.com/Rzfan03/raileys/issues"
   }
 }
